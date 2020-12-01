@@ -1,0 +1,6 @@
+mirai/debug
+mirai/release
+.vscode
+cross-compile-bin
+mirai/bot/table.c
+
